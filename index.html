@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi Selfie</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    video, canvas, img {
+      width: 100%;
+      max-width: 320px;
+      height: 240px;
+      border-radius: 10px;
+      border: 2px solid #ccc;
+      margin-bottom: 15px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #retake {
+      background-color: #6c757d;
+    }
+    #retake:hover {
+      background-color: #545b62;
+    }
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📸 Ambil Foto Selfie Absensi</h2>
+    
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <img id="photo" alt="Hasil Foto" style="display:none;">
+    
+    <div>
+      <button id="capture">Ambil Foto</button>
+      <button id="retake" style="display:none;">Ambil Ulang</button>
+    </div>
+    
+    <p id="status"></p>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const photo = document.getElementById('photo');
+    const captureBtn = document.getElementById('capture');
+    const retakeBtn = document.getElementById('retake');
+    const status = document.getElementById('status');
+
+    // Aktifkan kamera
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "user" } 
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        status.innerHTML = "❌ Tidak dapat mengakses kamera: " + err.message;
+        status.style.color = "#dc3545";
+      }
+    }
+
+    // Ambil foto
+    captureBtn.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const dataUrl = canvas.toDataURL('image/png');
+      photo.src = dataUrl;
+      photo.style.display = 'block';
+      video.style.display = 'none';
+      captureBtn.style.display = 'none';
+      retakeBtn.style.display = 'inline-block';
+      status.innerHTML = "✅ Foto berhasil diambil!";
+
+      // Kirim hasil foto (opsional)
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'SELFIE_RESULT', photo: dataUrl }, '*');
+      }
+      
+      // Simpan data URL untuk penggunaan selanjutnya
+      console.log("Data URL foto:", dataUrl.substring(0, 50) + "...");
+    });
+
+    // Ulangi ambil foto
+    retakeBtn.addEventListener('click', () => {
+      video.style.display = 'block';
+      photo.style.display = 'none';
+      captureBtn.style.display = 'inline-block';
+      retakeBtn.style.display = 'none';
+      status.innerHTML = "";
+    });
+
+    // Mulai kamera saat halaman dimuat
+    startCamera();
+  </script>
+</body>
+</html>
